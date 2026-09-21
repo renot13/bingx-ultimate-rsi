@@ -1,0 +1,46 @@
+name: BingX Ultimate RSI Screener
+
+on:
+  schedule:
+    - cron: '1 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Tes tanpa mengirim Telegram atau mengubah riwayat'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bingx-screener
+  cancel-in-progress: false
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TG_TOKEN: ${{ secrets.TG_TOKEN }}
+      TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+      GITHUB_TOKEN: ${{ github.token }}
+      STATE_BRANCH: bot-state
+      MAX_COINS: '200'
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run offline tests
+        run: python -m unittest discover -s tests -v
+      - name: Scan BingX
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+        run: python bot.py

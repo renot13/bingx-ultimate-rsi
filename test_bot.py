@@ -1,0 +1,125 @@
+import unittest
+from unittest.mock import patch, MagicMock
+import numpy as np
+import pandas as pd
+
+from bot import HOUR, closed_frame, eligible, rma, ultimate_rsi, tokyo_day, send_photo, DeliveryUnknown, GitHubState, StateError
+import requests
+
+
+class IndicatorTests(unittest.TestCase):
+    def test_wilder_seed(self):
+        result = rma(pd.Series([np.nan, 1., 2., 3., 6.]), 3)
+        self.assertTrue(np.isnan(result.iloc[2]))
+        self.assertEqual(result.iloc[3], 2.)
+        self.assertAlmostEqual(result.iloc[4], 10 / 3)
+
+    def test_monotonic_series(self):
+        for values, expected in [(range(1, 301), 100), (range(301, 1, -1), 0)]:
+            arsi, signal = ultimate_rsi(pd.Series(values, dtype=float))
+            self.assertAlmostEqual(arsi.iloc[-1], expected)
+            self.assertAlmostEqual(signal.iloc[-1], expected)
+
+    def test_flat_is_undefined_not_fake_oversold(self):
+        arsi, _ = ultimate_rsi(pd.Series([10.] * 300))
+        self.assertTrue(arsi.isna().all())
+
+    def test_reference_scalar_pine_formula(self):
+        close = np.random.default_rng(4).uniform(20, 100, 300)
+        upper, lower, changes = [], [], []
+        for i, value in enumerate(close):
+            upper.append(max(close[max(0, i-13):i+1]))
+            lower.append(min(close[max(0, i-13):i+1]))
+            if i == 0:
+                changes.append(np.nan)
+            elif upper[i] > upper[i-1]:
+                changes.append(upper[i]-lower[i])
+            elif lower[i] < lower[i-1]:
+                changes.append(lower[i]-upper[i])
+            else:
+                changes.append(value-close[i-1])
+        numerator = sum(changes[1:15])/14
+        denominator = sum(abs(x) for x in changes[1:15])/14
+        expected = numerator/denominator*50+50
+        ema = expected
+        for value in changes[15:]:
+            numerator += (value-numerator)/14
+            denominator += (abs(value)-denominator)/14
+            expected = numerator/denominator*50+50
+            ema += (expected-ema)*2/15
+        arsi, signal = ultimate_rsi(pd.Series(close))
+        self.assertAlmostEqual(arsi.iloc[-1], expected)
+        self.assertAlmostEqual(signal.iloc[-1], ema)
+
+
+class CandleTests(unittest.TestCase):
+    def rows(self, count):
+        return [[i*HOUR, i+10, i+12, i+9, i+11, 100] for i in range(count)]
+
+    def test_exclude_open_and_keep_closed_last(self):
+        for count in (250, 251):
+            frame = closed_frame(self.rows(count), 250*HOUR+60_000)
+            self.assertEqual(len(frame), 250)
+            self.assertEqual(frame.Timestamp.iloc[-1], 249*HOUR)
+
+    def test_reject_stale_or_gapped(self):
+        with self.assertRaises(ValueError):
+            closed_frame(self.rows(249), 250*HOUR)
+        rows = self.rows(250)
+        del rows[100]
+        with self.assertRaises(ValueError):
+            closed_frame(rows, 250*HOUR)
+
+    def test_tokyo_midnight(self):
+        before = int(pd.Timestamp('2026-09-20T14:59:59Z').timestamp()*1000)
+        self.assertEqual(tokyo_day(before), '2026-09-20')
+        self.assertEqual(tokyo_day(before+1000), '2026-09-21')
+
+    def test_daily_limit_including_pending(self):
+        for status in ('pending', 'sent'):
+            state = {'ABC': {'day': '2026-09-20', 'status': status}}
+            self.assertFalse(eligible(state, 'ABC', '2026-09-20'))
+            self.assertTrue(eligible(state, 'ABC', '2026-09-21'))
+            self.assertTrue(eligible(state, 'XYZ', '2026-09-20'))
+
+    def test_telegram_timeout_not_retried(self):
+        from pathlib import Path
+        import tempfile
+        with tempfile.NamedTemporaryFile() as file:
+            with patch('bot.requests.post', side_effect=requests.Timeout) as post:
+                with self.assertRaises(DeliveryUnknown):
+                    send_photo('dummy', 'dummy', Path(file.name), 'test')
+                self.assertEqual(post.call_count, 1)
+
+
+class StateTests(unittest.TestCase):
+    def test_load_persisted_pending(self):
+        import base64, json
+        payload = {'ABC': {'day': '2026-09-20', 'status': 'pending'}}
+        content = base64.b64encode(json.dumps(payload).encode()).decode()
+        with patch.dict('os.environ', {'GITHUB_REPOSITORY': 'test/test', 'GITHUB_TOKEN': 'fake'}):
+            with patch.object(GitHubState, 'call', side_effect=[{}, {'sha': 'abc', 'content': content}]):
+                state = GitHubState()
+                self.assertFalse(eligible(state.data, 'ABC', '2026-09-20'))
+
+    def test_corrupt_state_fails_closed(self):
+        with patch.dict('os.environ', {'GITHUB_REPOSITORY': 'test/test', 'GITHUB_TOKEN': 'fake'}):
+            with patch.object(GitHubState, 'call', side_effect=[{}, {'sha': 'abc', 'content': 'bad!'}]):
+                with self.assertRaises(StateError):
+                    GitHubState()
+
+    def test_conflict_does_not_overwrite(self):
+        state = GitHubState.__new__(GitHubState)
+        state.base = 'https://api.github.com/repos/test/test'
+        state.branch, state.sha, state.data = 'bot-state', 'oldsha', {}
+        state.session = MagicMock()
+        state.session.request.return_value.status_code = 409
+        state.session.request.return_value.ok = False
+        with self.assertRaises(StateError):
+            state.save()
+        self.assertEqual(state.session.request.call_count, 1)
+        self.assertEqual(state.sha, 'oldsha')
+
+
+if __name__ == '__main__':
+    unittest.main()

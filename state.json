@@ -25,5 +25,10 @@
     "status": "sent",
     "candle_close": "2026-09-21 20:00 JST",
     "message_id": 5
+  },
+  "PAXG/USDT:USDT": {
+    "day": "2026-09-21",
+    "status": "pending",
+    "candle_close": "2026-09-21 20:00 JST"
   }
 }

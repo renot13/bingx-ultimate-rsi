@@ -1,5 +1,10 @@
 {
   "__meta__": {
     "last_open_ms": 1789981200000
+  },
+  "NCCOGOLD2USD/USDT:USDT": {
+    "day": "2026-09-21",
+    "status": "pending",
+    "candle_close": "2026-09-21 20:00 JST"
   }
 }

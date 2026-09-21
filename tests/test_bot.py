@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 import pandas as pd
 
-from bot import HOUR, closed_frame, eligible, rma, ultimate_rsi, tokyo_day, send_photo, DeliveryUnknown, GitHubState, StateError
+from bot import HOUR, catchup_open_times, closed_frame, eligible, rma, ultimate_rsi, tokyo_day, send_photo, DeliveryUnknown, GitHubState, StateError
 import requests
 
 
@@ -90,6 +90,15 @@ class CandleTests(unittest.TestCase):
                 with self.assertRaises(DeliveryUnknown):
                     send_photo('dummy', 'dummy', Path(file.name), 'test')
                 self.assertEqual(post.call_count, 1)
+
+    def test_catchup_candles_are_ordered_and_bounded(self):
+        self.assertEqual(catchup_open_times(None, 10 * HOUR), [10 * HOUR])
+        self.assertEqual(catchup_open_times(7 * HOUR, 10 * HOUR),
+                         [8 * HOUR, 9 * HOUR, 10 * HOUR])
+        self.assertEqual(catchup_open_times(10 * HOUR, 10 * HOUR), [])
+        self.assertEqual(len(catchup_open_times(0, 100 * HOUR)), 24)
+        with self.assertRaises(StateError):
+            catchup_open_times(11 * HOUR, 10 * HOUR)
 
 
 class StateTests(unittest.TestCase):

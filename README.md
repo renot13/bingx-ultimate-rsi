@@ -132,8 +132,10 @@ data, panjang sejarah, exchange, jenis harga, dan pengaturan indikator yang sama
 Hasil scan bukan bukti keuntungan strategi.
 
 CCXT rate limiter aktif; permintaan data memakai timeout dan retry terbatas.
-Satu koin gagal tidak menghentikan koin lain. Pada akhir eksekusi, error membuat
-workflow merah agar kegagalan tidak disamarkan sebagai "tidak ada sinyal".
+Satu koin gagal tidak menghentikan koin lain. Kegagalan kecil dilaporkan sebagai
+peringatan; workflow merah jika tidak ada pasar berhasil diperiksa atau setidaknya
+10% dari sampel gagal. Jika Secrets Telegram belum diatur, jadwal
+otomatis menjalankan tes tetapi melewati scan live tanpa mengirim pesan.
 Kegagalan penyimpanan riwayat menghentikan pengiriman demi menjaga deduplikasi.
 Jeda Telegram pendek untuk pembatasan pengiriman; tidak ada loop layanan 24 jam.
 Pemindaian 200 koin belum tentu selesai dalam kuota privat; ukur durasi di Actions.

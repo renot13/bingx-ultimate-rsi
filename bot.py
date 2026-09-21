@@ -330,8 +330,10 @@ def main():
     if os.getenv('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
             output.write(summary + '\n')
+    if successful == 0 or errors >= max(1, len(symbols) // 10):
+        raise RuntimeError('Terlalu banyak pasar gagal diperiksa; periksa log.')
     if errors:
-        raise RuntimeError('Ada koin/pengiriman gagal. Koin lain tetap diproses; periksa log.')
+        LOG.warning('%d pasar dilewati karena error; pasar lain berhasil diperiksa.', errors)
 
 
 if __name__ == '__main__':

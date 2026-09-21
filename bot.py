@@ -27,6 +27,7 @@ import requests
 LOG = logging.getLogger('screener')
 TOKYO = ZoneInfo('Asia/Tokyo')
 HOUR = 3_600_000
+MAX_CATCHUP_CANDLES = 24
 
 
 def rma(series: pd.Series, length: int) -> pd.Series:
@@ -90,6 +91,16 @@ def tokyo_day(ms: int) -> str:
 
 def eligible(state: dict, symbol: str, day: str) -> bool:
     return state.get(symbol, {}).get('day') != day
+
+
+def catchup_open_times(last_open_ms: int | None, latest_open_ms: int) -> list[int]:
+    """Process missed closed candles in order, bounded to one day of history."""
+    if last_open_ms is None:
+        return [latest_open_ms]
+    if last_open_ms > latest_open_ms or last_open_ms % HOUR:
+        raise StateError('Posisi pemindaian tidak valid; hentikan agar tidak melewatkan sinyal')
+    first = max(last_open_ms + HOUR, latest_open_ms - (MAX_CATCHUP_CANDLES - 1) * HOUR)
+    return list(range(first, latest_open_ms + 1, HOUR))
 
 
 def render_chart(frame: pd.DataFrame, symbol: str, path: Path) -> None:
@@ -181,10 +192,17 @@ class GitHubState:
             self.sha = content['sha']
             try:
                 self.data = json.loads(base64.b64decode(content['content']))
-                if not isinstance(self.data, dict) or any(
-                    not isinstance(v, dict) or not isinstance(v.get('day'), str)
-                    or v.get('status') not in ('pending', 'sent') for v in self.data.values()
-                ):
+                if not isinstance(self.data, dict):
+                    raise ValueError('Invalid state')
+                meta = self.data.get('__meta__', {})
+                if (not isinstance(meta, dict)
+                    or (meta and (not isinstance(meta.get('last_open_ms'), int)
+                                  or meta['last_open_ms'] < 0))
+                    or any(
+                        not isinstance(v, dict) or not isinstance(v.get('day'), str)
+                        or v.get('status') not in ('pending', 'sent')
+                        for k, v in self.data.items() if k != '__meta__'
+                    )):
                     raise ValueError('Invalid state')
             except Exception:
                 raise StateError('Riwayat rusak; hentikan agar tidak mengirim duplikat') from None
@@ -271,8 +289,21 @@ def main():
     if not isinstance(now_ms, int):
         raise RuntimeError('Waktu server BingX tidak valid')
     target_day = tokyo_day(now_ms)
+    latest_open_ms = (now_ms // HOUR - 1) * HOUR
+    last_open_ms = None if dry else state.data.get('__meta__', {}).get('last_open_ms')
+    opens = catchup_open_times(last_open_ms, latest_open_ms)
+    if state and last_open_ms is None:
+        # Preserve a retryable starting point even if this first scan has an error.
+        state.data['__meta__'] = {'last_open_ms': latest_open_ms - HOUR}
+        state.save()
+    if not opens:
+        LOG.info('Candle terbaru sudah dipindai; tidak ada candle baru.')
+        return
+    if last_open_ms is not None and opens[0] > last_open_ms + HOUR:
+        LOG.warning('Jeda terlalu panjang; hanya %d candle tertutup terakhir diproses.', len(opens))
     successful = skipped = errors = sent = matches = 0
-    LOG.info('Memeriksa %d pasar; tanggal Tokyo %s; dry_run=%s', len(symbols), target_day, dry)
+    LOG.info('Memeriksa %d pasar; %d candle tertutup; tanggal Tokyo %s; dry_run=%s',
+             len(symbols), len(opens), target_day, dry)
     for symbol in symbols:
         if state and not eligible(state.data, symbol, target_day):
             skipped += 1
@@ -281,43 +312,49 @@ def main():
             rows = retry_read(exchange.fetch_ohlcv, symbol, '1h', limit=1000)
             frame = closed_frame(rows, now_ms)
             successful += 1
-            arsi = float(frame.ARSI.iloc[-1])
-            LOG.info('%s Ultimate RSI %.4f', symbol, arsi)
             if dry and args.preview_dir and successful == 1:
                 args.preview_dir.mkdir(parents=True, exist_ok=True)
                 render_chart(frame, symbol, args.preview_dir / 'preview.png')
-            if arsi >= 20:
-                continue
-            matches += 1
-            close_time = datetime.fromtimestamp((int(frame.Timestamp.iloc[-1]) + HOUR) / 1000, TOKYO).strftime('%Y-%m-%d %H:%M JST')
-            caption = (f'OVERSOLD | {symbol}\nBingX USDT-M Perpetual | 1 jam\n'
-                       f'Close: {frame.Close.iloc[-1]:.10g} USDT\nUltimate RSI: {arsi:.4f} (<20)\n'
-                       f'Candle tutup: {close_time}\nMaksimal 1 sinyal/koin/hari Tokyo\n'
-                       'Ultimate RSI © LuxAlgo')
-            if dry:
-                if args.preview_dir and matches == 1:
-                    render_chart(frame, symbol, args.preview_dir / 'signal-preview.png')
-                LOG.info('DRY RUN sinyal: %s', caption.replace('\n', ' | '))
-                continue
-            # If a manual run crosses midnight, stop rather than assigning an old
-            # candle to a new delivery day. Scheduled runs are capped at 45 min.
-            if datetime.now(TOKYO).date().isoformat() != target_day:
-                raise StateError('Hari Tokyo berubah; tunggu pemindaian berikutnya')
-            with tempfile.TemporaryDirectory(prefix='bingx-chart-') as temp:
-                path = Path(temp) / 'chart.png'
-                render_chart(frame, symbol, path)
-                state.data[symbol] = {'day': target_day, 'status': 'pending', 'candle_close': close_time}
-                state.save()  # Reserve durably BEFORE irreversible delivery.
-                try:
-                    message_id = send_photo(os.environ['TG_TOKEN'], os.environ['TG_CHAT_ID'], path, caption)
-                except ValueError:
-                    del state.data[symbol]
+            for candle_open_ms in opens:
+                candle_frame = frame.loc[frame.Timestamp <= candle_open_ms]
+                if candle_frame.empty or int(candle_frame.Timestamp.iloc[-1]) != candle_open_ms:
+                    raise ValueError('Candle catch-up tidak tersedia')
+                arsi = float(candle_frame.ARSI.iloc[-1])
+                if not math.isfinite(arsi):
+                    raise ValueError('Ultimate RSI candle catch-up belum terdefinisi')
+                LOG.info('%s candle %s Ultimate RSI %.4f', symbol, candle_open_ms, arsi)
+                if arsi >= 20:
+                    continue
+                matches += 1
+                close_time = datetime.fromtimestamp((candle_open_ms + HOUR) / 1000, TOKYO).strftime('%Y-%m-%d %H:%M JST')
+                caption = (f'OVERSOLD | {symbol}\nBingX USDT-M Perpetual | 1 jam\n'
+                           f'Close: {candle_frame.Close.iloc[-1]:.10g} USDT\nUltimate RSI: {arsi:.4f} (<20)\n'
+                           f'Candle tutup: {close_time}\nMaksimal 1 sinyal/koin/hari Tokyo\n'
+                           'Ultimate RSI © LuxAlgo')
+                if dry:
+                    if args.preview_dir and matches == 1:
+                        render_chart(candle_frame, symbol, args.preview_dir / 'signal-preview.png')
+                    LOG.info('DRY RUN sinyal: %s', caption.replace('\n', ' | '))
+                    continue
+                # A signal on an older missed candle counts toward today's delivery limit.
+                if datetime.now(TOKYO).date().isoformat() != target_day:
+                    raise StateError('Hari Tokyo berubah; tunggu pemindaian berikutnya')
+                with tempfile.TemporaryDirectory(prefix='bingx-chart-') as temp:
+                    path = Path(temp) / 'chart.png'
+                    render_chart(candle_frame, symbol, path)
+                    state.data[symbol] = {'day': target_day, 'status': 'pending', 'candle_close': close_time}
+                    state.save()  # Reserve durably BEFORE irreversible delivery.
+                    try:
+                        message_id = send_photo(os.environ['TG_TOKEN'], os.environ['TG_CHAT_ID'], path, caption)
+                    except ValueError:
+                        del state.data[symbol]
+                        state.save()
+                        raise
+                    state.data[symbol].update(status='sent', message_id=message_id)
                     state.save()
-                    raise
-                state.data[symbol].update(status='sent', message_id=message_id)
-                state.save()
-                sent += 1
-                time.sleep(1.1)  # Short per-chat pacing, not a continuously running bot.
+                    sent += 1
+                    time.sleep(1.1)
+                break  # At most one signal per coin per Tokyo delivery day.
         except StateError:
             raise
         except Exception as exc:
@@ -332,6 +369,9 @@ def main():
             output.write(summary + '\n')
     if successful == 0 or errors >= max(1, len(symbols) // 10):
         raise RuntimeError('Terlalu banyak pasar gagal diperiksa; periksa log.')
+    if state and errors == 0:
+        state.data['__meta__'] = {'last_open_ms': latest_open_ms}
+        state.save()
     if errors:
         LOG.warning('%d pasar dilewati karena error; pasar lain berhasil diperiksa.', errors)
 

@@ -2,12 +2,17 @@
 
 Screener **1 jam**, menggunakan candle **BingX USDT-M Perpetual**, bukan RSI
 standar. Mengirim gambar candlestick + panel Ultimate RSI LuxAlgo ketika
-**nilai Ultimate RSI yang belum dibulatkan < 20** pada candle tertutup terbaru.
+**nilai Ultimate RSI yang belum dibulatkan < 20** pada candle tertutup yang
+belum dipindai.
 Tidak menggunakan SMA20 atau syarat crossing. Tidak memasang order.
 
 ## Pengaturan siap pakai
 
-- Setiap jam pada menit :01; GitHub dapat menunda atau melewatkan jadwal.
+- Setiap jam pada menit :11; GitHub tetap dapat menunda atau melewatkan jadwal.
+- Jika jadwal terlewat, run live berikutnya memeriksa candle tertutup sejak
+  pemindaian terakhir (maksimal 24 candle) secara berurutan. Sinyal lama
+  ditandai dengan waktu tutup candle aslinya dan tetap hanya satu per koin
+  per hari pengiriman Tokyo. Run live pertama hanya memeriksa candle terbaru.
 - Waktu gambar dan pergantian hari: **Asia/Tokyo (JST / UTC+9)**.
 - **200 pasangan aktif dengan volume transaksi 24 jam terbesar**, dipilih ulang
   saat scan. Jika kurang dari 200, semua pasangan aktif diperiksa. Pemilihan
@@ -76,12 +81,13 @@ Tidak menggunakan SMA20 atau syarat crossing. Tidak memasang order.
 
 Laptop boleh mati setelah pemasangan. Jadwal publik dapat dinonaktifkan GitHub
 setelah 60 hari tanpa aktivitas repository. Periksa tab Actions secara berkala.
-Tidak ada jaminan eksekusi tepat pada menit :01 atau pemulihan candle yang
-terlewat: bot hanya memeriksa candle tertutup terbaru saat mulai.
+Tidak ada jaminan eksekusi tepat pada menit :11. Catch-up bergantung pada
+run live berikutnya; jeda lebih dari 24 jam dapat menyebabkan sinyal hilang.
 
 ## Riwayat harian dan pengiriman ganda
 
-`bot-state/state.json` menyimpan tanggal, candle, status, dan ID pesan, tanpa token
+`bot-state/state.json` menyimpan tanggal, candle, status, ID pesan, dan posisi
+pemindaian terakhir, tanpa token
 atau chat ID. Pada repository publik informasi sinyal itu juga publik. Workflow
 dibatasi agar tidak berjalan bersamaan. Jangan menjalankan salinan live di repo
 lain dengan chat yang sama karena riwayatnya terpisah.

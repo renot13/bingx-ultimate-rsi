@@ -43,4 +43,9 @@ jobs:
       - name: Scan BingX
         env:
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
-        run: python bot.py
+        run: |
+          if [ "$DRY_RUN" != "1" ] && { [ -z "$TG_TOKEN" ] || [ -z "$TG_CHAT_ID" ]; }; then
+            echo 'Telegram Secrets belum diatur; scan live dilewati.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python bot.py

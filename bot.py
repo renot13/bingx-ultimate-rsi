@@ -301,13 +301,14 @@ def main():
         return
     if last_open_ms is not None and opens[0] > last_open_ms + HOUR:
         LOG.warning('Jeda terlalu panjang; hanya %d candle tertutup terakhir diproses.', len(opens))
-    successful = skipped = errors = sent = matches = 0
+    successful = skipped = errors = sent = matches = delivery_errors = 0
     LOG.info('Memeriksa %d pasar; %d candle tertutup; tanggal Tokyo %s; dry_run=%s',
              len(symbols), len(opens), target_day, dry)
     for symbol in symbols:
         if state and not eligible(state.data, symbol, target_day):
             skipped += 1
             continue
+        attempted_delivery = False
         try:
             rows = retry_read(exchange.fetch_ohlcv, symbol, '1h', limit=1000)
             frame = closed_frame(rows, now_ms)
@@ -344,6 +345,7 @@ def main():
                     render_chart(candle_frame, symbol, path)
                     state.data[symbol] = {'day': target_day, 'status': 'pending', 'candle_close': close_time}
                     state.save()  # Reserve durably BEFORE irreversible delivery.
+                    attempted_delivery = True
                     try:
                         message_id = send_photo(os.environ['TG_TOKEN'], os.environ['TG_CHAT_ID'], path, caption)
                     except ValueError:
@@ -359,6 +361,8 @@ def main():
             raise
         except Exception as exc:
             errors += 1
+            if attempted_delivery:
+                delivery_errors += 1
             # Never print requests exception URLs; they can include the bot token.
             LOG.warning('%s gagal (%s)', symbol, type(exc).__name__)
     summary = (f'Pasar: {len(symbols)} | Diperiksa: {successful} | Sudah diproses hari ini: {skipped} | '
@@ -369,7 +373,9 @@ def main():
             output.write(summary + '\n')
     if successful == 0 or errors >= max(1, len(symbols) // 10):
         raise RuntimeError('Terlalu banyak pasar gagal diperiksa; periksa log.')
-    if state and errors == 0:
+    if state and delivery_errors == 0:
+        # An isolated bad market must not hold the global catch-up cursor back.
+        # A failed Telegram delivery remains retryable at the next run.
         state.data['__meta__'] = {'last_open_ms': latest_open_ms}
         state.save()
     if errors:

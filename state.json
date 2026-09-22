@@ -67,5 +67,10 @@
     "status": "sent",
     "candle_close": "2026-09-22 17:00 JST",
     "message_id": 20
+  },
+  "EUL/USDT:USDT": {
+    "day": "2026-09-22",
+    "status": "pending",
+    "candle_close": "2026-09-22 20:00 JST"
   }
 }

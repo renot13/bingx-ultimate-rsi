@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from html import escape
 import json
 import logging
 import math
@@ -14,6 +15,7 @@ import tempfile
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 import ccxt
 import matplotlib
@@ -91,6 +93,25 @@ def tokyo_day(ms: int) -> str:
 
 def eligible(state: dict, symbol: str, day: str) -> bool:
     return state.get(symbol, {}).get('day') != day
+
+
+def tradingview_url(symbol: str) -> str:
+    """Link directly to the BingX USDT-M perpetual chart, not the spot pair."""
+    if not symbol.endswith('/USDT:USDT'):
+        raise ValueError('Bukan pasangan BingX USDT-M perpetual')
+    ticker = symbol.split('/', 1)[0] + 'USDT.P'
+    return 'https://www.tradingview.com/chart/?symbol=' + quote('BINGX:' + ticker, safe='') + '&interval=60'
+
+
+def signal_caption(symbol: str, close: float, arsi: float, close_time: str) -> str:
+    ticker = symbol.split('/', 1)[0] + 'USDT.P'
+    url = tradingview_url(symbol)
+    return (f'OVERSOLD | BingX USDT-M Perpetual · 1 jam\n'
+            f'Koin: <code>{escape(ticker)}</code>\n'
+            f'Close: {close:.10g} USDT\n'
+            f'Ultimate RSI: {arsi:.4f} (&lt;20)\n'
+            f'Candle tutup: {escape(close_time)}\n'
+            f'<a href="{url}">Buka chart BingX di TradingView</a>')
 
 
 def catchup_open_times(last_open_ms: int | None, latest_open_ms: int) -> list[int]:
@@ -237,7 +258,8 @@ def send_photo(token: str, chat: str, path: Path, caption: str) -> int:
         try:
             with path.open('rb') as photo:
                 response = requests.post(f'https://api.telegram.org/bot{token}/sendPhoto',
-                    data={'chat_id': chat, 'caption': caption}, files={'photo': photo}, timeout=(10, 60))
+                    data={'chat_id': chat, 'caption': caption, 'parse_mode': 'HTML'},
+                    files={'photo': photo}, timeout=(10, 60))
             result = response.json()
         except (requests.RequestException, ValueError):
             raise DeliveryUnknown('Status Telegram tidak pasti; reservasi dipertahankan') from None
@@ -328,10 +350,7 @@ def main():
                     continue
                 matches += 1
                 close_time = datetime.fromtimestamp((candle_open_ms + HOUR) / 1000, TOKYO).strftime('%Y-%m-%d %H:%M JST')
-                caption = (f'OVERSOLD | {symbol}\nBingX USDT-M Perpetual | 1 jam\n'
-                           f'Close: {candle_frame.Close.iloc[-1]:.10g} USDT\nUltimate RSI: {arsi:.4f} (<20)\n'
-                           f'Candle tutup: {close_time}\nMaksimal 1 sinyal/koin/hari Tokyo\n'
-                           'Ultimate RSI © LuxAlgo')
+                caption = signal_caption(symbol, float(candle_frame.Close.iloc[-1]), arsi, close_time)
                 if dry:
                     if args.preview_dir and matches == 1:
                         render_chart(candle_frame, symbol, args.preview_dir / 'signal-preview.png')

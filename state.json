@@ -109,5 +109,10 @@
     "status": "sent",
     "candle_close": "2026-09-23 02:00 JST",
     "message_id": 34
+  },
+  "ENA/USDT:USDT": {
+    "day": "2026-09-23",
+    "status": "pending",
+    "candle_close": "2026-09-23 04:00 JST"
   }
 }

@@ -27,10 +27,9 @@
     "message_id": 12
   },
   "PAXG/USDT:USDT": {
-    "day": "2026-09-21",
-    "status": "sent",
-    "candle_close": "2026-09-21 20:00 JST",
-    "message_id": 6
+    "day": "2026-09-22",
+    "status": "pending",
+    "candle_close": "2026-09-22 17:00 JST"
   },
   "ON/USDT:USDT": {
     "day": "2026-09-22",

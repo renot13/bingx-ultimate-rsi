@@ -75,10 +75,9 @@
     "message_id": 30
   },
   "SOPH/USDT:USDT": {
-    "day": "2026-09-22",
-    "status": "sent",
-    "candle_close": "2026-09-22 20:00 JST",
-    "message_id": 22
+    "day": "2026-09-23",
+    "status": "pending",
+    "candle_close": "2026-09-23 00:00 JST"
   },
   "SYRUP/USDT:USDT": {
     "day": "2026-09-22",

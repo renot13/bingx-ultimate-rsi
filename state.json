@@ -55,5 +55,10 @@
     "status": "sent",
     "candle_close": "2026-09-22 06:00 JST",
     "message_id": 16
+  },
+  "NCCOXAG2USD/USDT:USDT": {
+    "day": "2026-09-22",
+    "status": "pending",
+    "candle_close": "2026-09-22 17:00 JST"
   }
 }

@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 import pandas as pd
 
-from bot import HOUR, catchup_open_times, closed_frame, eligible, rma, ultimate_rsi, tokyo_day, send_photo, DeliveryUnknown, GitHubState, StateError
+from bot import HOUR, catchup_open_times, closed_frame, eligible, rma, ultimate_rsi, tokyo_day, send_photo, signal_caption, tradingview_url, DeliveryUnknown, GitHubState, StateError
 import requests
 
 
@@ -90,6 +90,16 @@ class CandleTests(unittest.TestCase):
                 with self.assertRaises(DeliveryUnknown):
                     send_photo('dummy', 'dummy', Path(file.name), 'test')
                 self.assertEqual(post.call_count, 1)
+
+    def test_caption_has_copyable_ticker_and_bingx_chart(self):
+        caption = signal_caption('ON/USDT:USDT', 0.1456, 18.6659, '2026-09-21 20:00 JST')
+        self.assertIn('Koin: <code>ONUSDT.P</code>', caption)
+        self.assertIn('symbol=BINGX%3AONUSDT.P&interval=60', caption)
+        self.assertIn('18.6659 (&lt;20)', caption)
+        self.assertNotIn('Maksimal 1 sinyal', caption)
+        self.assertNotIn('© LuxAlgo', caption)
+        with self.assertRaises(ValueError):
+            tradingview_url('ON/USDT')
 
     def test_catchup_candles_are_ordered_and_bounded(self):
         self.assertEqual(catchup_open_times(None, 10 * HOUR), [10 * HOUR])

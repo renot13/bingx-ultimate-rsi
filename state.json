@@ -433,5 +433,10 @@
     "status": "sent",
     "candle_close": "2026-09-24 05:00 JST",
     "message_id": 105
+  },
+  "RECALL/USDT:USDT": {
+    "day": "2026-09-24",
+    "status": "pending",
+    "candle_close": "2026-09-24 05:00 JST"
   }
 }

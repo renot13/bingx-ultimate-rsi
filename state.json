@@ -3,10 +3,9 @@
     "last_open_ms": 1790172000000
   },
   "NCCOGOLD2USD/USDT:USDT": {
-    "day": "2026-09-22",
-    "status": "sent",
-    "candle_close": "2026-09-22 00:00 JST",
-    "message_id": 9
+    "day": "2026-09-24",
+    "status": "pending",
+    "candle_close": "2026-09-24 01:00 JST"
   },
   "NCCO1OILWTI2USD/USDT:USDT": {
     "day": "2026-09-22",

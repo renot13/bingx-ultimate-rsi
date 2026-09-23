@@ -391,5 +391,10 @@
     "status": "sent",
     "candle_close": "2026-09-24 04:00 JST",
     "message_id": 97
+  },
+  "WAL/USDT:USDT": {
+    "day": "2026-09-24",
+    "status": "pending",
+    "candle_close": "2026-09-24 04:00 JST"
   }
 }

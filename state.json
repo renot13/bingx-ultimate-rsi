@@ -63,10 +63,9 @@
     "message_id": 18
   },
   "NCCOPALLADIUM2USD/USDT:USDT": {
-    "day": "2026-09-22",
-    "status": "sent",
-    "candle_close": "2026-09-22 17:00 JST",
-    "message_id": 20
+    "day": "2026-09-23",
+    "status": "pending",
+    "candle_close": "2026-09-23 19:00 JST"
   },
   "EUL/USDT:USDT": {
     "day": "2026-09-23",

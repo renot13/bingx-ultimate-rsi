@@ -118,8 +118,9 @@
   },
   "HOME/USDT:USDT": {
     "day": "2026-09-24",
-    "status": "pending",
-    "candle_close": "2026-09-24 01:00 JST"
+    "status": "sent",
+    "candle_close": "2026-09-24 01:00 JST",
+    "message_id": 70
   },
   "COW/USDT:USDT": {
     "day": "2026-09-24",

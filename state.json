@@ -403,5 +403,10 @@
     "status": "sent",
     "candle_close": "2026-09-24 04:00 JST",
     "message_id": 99
+  },
+  "XLM/USDT:USDT": {
+    "day": "2026-09-24",
+    "status": "pending",
+    "candle_close": "2026-09-24 05:00 JST"
   }
 }

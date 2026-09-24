@@ -555,10 +555,9 @@
     "message_id": 125
   },
   "PIEVERSE/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 07:00 JST",
-    "message_id": 126
+    "day": "2026-09-25",
+    "status": "pending",
+    "candle_close": "2026-09-25 00:00 JST"
   },
   "BAS/USDT:USDT": {
     "day": "2026-09-24",

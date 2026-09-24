@@ -661,5 +661,10 @@
     "status": "sent",
     "candle_close": "2026-09-24 19:00 JST",
     "message_id": 144
+  },
+  "PI/USDT:USDT": {
+    "day": "2026-09-25",
+    "status": "pending",
+    "candle_close": "2026-09-25 00:00 JST"
   }
 }

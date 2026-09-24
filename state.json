@@ -57,10 +57,9 @@
     "message_id": 28
   },
   "NCCOXAG2USD/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 09:00 JST",
-    "message_id": 129
+    "day": "2026-09-25",
+    "status": "pending",
+    "candle_close": "2026-09-25 00:00 JST"
   },
   "NCCOPALLADIUM2USD/USDT:USDT": {
     "day": "2026-09-24",

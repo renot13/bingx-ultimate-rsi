@@ -135,10 +135,9 @@
     "message_id": 49
   },
   "SPX/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 00:00 JST",
-    "message_id": 53
+    "day": "2026-09-25",
+    "status": "pending",
+    "candle_close": "2026-09-25 00:00 JST"
   },
   "ETH/USDT:USDT": {
     "day": "2026-09-24",

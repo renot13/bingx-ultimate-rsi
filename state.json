@@ -631,5 +631,10 @@
     "status": "sent",
     "candle_close": "2026-09-24 15:00 JST",
     "message_id": 139
+  },
+  "UAI/USDT:USDT": {
+    "day": "2026-09-24",
+    "status": "pending",
+    "candle_close": "2026-09-24 17:00 JST"
   }
 }

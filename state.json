@@ -628,8 +628,9 @@
   },
   "NCSKHOOD2USD/USDT:USDT": {
     "day": "2026-09-25",
-    "status": "pending",
-    "candle_close": "2026-09-25 01:00 JST"
+    "status": "sent",
+    "candle_close": "2026-09-25 01:00 JST",
+    "message_id": 159
   },
   "UAI/USDT:USDT": {
     "day": "2026-09-25",

@@ -33,11 +33,9 @@ Tidak menggunakan SMA20 atau syarat crossing. Tidak memasang order.
   Indikator tetap dihitung sebagai pemicu; panelnya tidak dirender di gambar.
 - Gambar dibuat dari OHLCV perdagangan BingX, bukan screenshot aplikasi, dan
   bukan candle mark price. File sementara dibersihkan setelah percobaan kirim.
-- Caption Telegram menampilkan ticker perpetual `BINGX:...USDT.P` sebagai teks
-  monospace agar mudah disalin, serta tautan langsung ke chart TradingView
-  BingX 1 jam. Aturan satu sinyal per koin per hari tetap berlaku walaupun
-  catatan operasional dan kredit dihilangkan dari caption; atribusi tetap ada
-  pada gambar dan NOTICE.md.
+- Caption Telegram menampilkan Pair dalam teks monospace agar mudah disalin,
+  tautan chart TradingView BingX 1 jam, dan atribusi lisensi. Gambar chart bersih
+  tanpa teks footer. Aturan satu sinyal per pasangan per hari tetap berlaku.
 
 ## Pasang di GitHub
 

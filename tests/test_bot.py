@@ -93,7 +93,7 @@ class CandleTests(unittest.TestCase):
 
     def test_caption_has_copyable_ticker_and_bingx_chart(self):
         caption = signal_caption('ON/USDT:USDT', 0.1456, 18.6659, '2026-09-21 20:00 JST', 2)
-        self.assertIn('│ 🪙 <b>Pair:</b> ON/USDT', caption)
+        self.assertIn('│ 🪙 <b>Pair:</b> <code>ON/USDT</code>', caption)
         self.assertIn('│ 🌐 <b>Market:</b> BingX USDT-M Perpetual', caption)
         self.assertIn('│ 📊 <b>Peringkat volume 24j:</b> #2', caption)
         self.assertIn('│ ⏱ <b>TF:</b> 1h', caption)
@@ -101,6 +101,7 @@ class CandleTests(unittest.TestCase):
         self.assertIn('│ 💵 <b>Price:</b> <b>0.1456 USDT</b>', caption)
         self.assertIn('symbol=BINGX%3AONUSDT.P&interval=60', caption)
         self.assertIn('│ 📉 <b>RSI:</b> <b>18.6659</b> (&lt;20)', caption)
+        self.assertIn('LuxAlgo · adaptasi Python · CC BY-NC-SA 4.0', caption)
         with self.assertRaises(ValueError):
             tradingview_url('ON/USDT')
 

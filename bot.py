@@ -134,7 +134,7 @@ def signal_caption(symbol: str, close: float, arsi: float, close_time: str,
     pair = symbol.split('/', 1)[0] + '/USDT'
     url = tradingview_url(symbol)
     return (f'<b>▣ 📊 MARKET INFO</b>\n'
-            f'│ 🪙 <b>Pair:</b> {escape(pair)}\n'
+            f'│ 🪙 <b>Pair:</b> <code>{escape(pair)}</code>\n'
             f'│ 🌐 <b>Market:</b> BingX USDT-M Perpetual\n'
             f'│ 📊 <b>Peringkat volume 24j:</b> #{volume_rank}\n'
             f'│ ⏱ <b>TF:</b> 1h\n'
@@ -143,7 +143,8 @@ def signal_caption(symbol: str, close: float, arsi: float, close_time: str,
             f'│ ⚠️ <b>Status:</b> <b>OVERSOLD</b>\n'
             f'│ 💵 <b>Price:</b> <b>{close:.10g} USDT</b>\n'
             f'│ 📉 <b>RSI:</b> <b>{arsi:.4f}</b> (&lt;20)\n'
-            f'└ 🔗 <a href="{url}">Buka chart BingX di TradingView</a>')
+            f'│ 🔗 <a href="{url}">Buka chart BingX di TradingView</a>\n'
+            f'└ © <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">LuxAlgo · adaptasi Python · CC BY-NC-SA 4.0</a>')
 
 
 def catchup_open_times(last_open_ms: int | None, latest_open_ms: int) -> list[int]:
@@ -186,8 +187,6 @@ def render_chart(frame: pd.DataFrame, symbol: str, path: Path) -> None:
         spine.set_visible(True)
         spine.set_color('#333333')
         spine.set_linewidth(0.65)
-    fig.text(0.5, 0.012, 'Asia/Tokyo | © LuxAlgo · CC BY-NC-SA 4.0 | Python adaptation',
-             ha='center', color='#777777', fontsize=7)
     try:
         fig.savefig(path, dpi=130, bbox_inches='tight', facecolor=fig.get_facecolor())
     finally:

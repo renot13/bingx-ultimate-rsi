@@ -681,10 +681,9 @@
     "message_id": 161
   },
   "LIGHTER/USDT:USDT": {
-    "day": "2026-09-25",
-    "status": "sent",
-    "candle_close": "2026-09-25 17:00 JST",
-    "message_id": 165
+    "day": "2026-09-26",
+    "status": "pending",
+    "candle_close": "2026-09-26 00:00 JST"
   },
   "FOLKS/USDT:USDT": {
     "day": "2026-09-25",

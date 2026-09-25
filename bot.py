@@ -95,6 +95,32 @@ def eligible(state: dict, symbol: str, day: str) -> bool:
     return state.get(symbol, {}).get('day') != day
 
 
+def is_active_usdt_perpetual(market: dict) -> bool:
+    """Include all active linear USDT swaps, including commodities and indexes."""
+    return (market.get('active') is True and market.get('swap') is True
+            and market.get('linear') is True and market.get('quote') == 'USDT'
+            and market.get('settle') == 'USDT' and bool(market.get('base'))
+            and market.get('type') == 'swap' and market.get('spot') is not True
+            and market.get('contract') is True)
+
+
+def volume_ranks(symbols: list[str], tickers: dict) -> tuple[list[str], dict[str, int]]:
+    """Order candidate USDT markets by 24h volume, with stable tie-breaks."""
+    def quote_volume(symbol: str) -> float:
+        ticker = tickers.get(symbol, {})
+        value = ticker.get('quoteVolume')
+        if value is None:
+            value = (ticker.get('baseVolume') or 0) * (ticker.get('last') or 0)
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+        return value if math.isfinite(value) and value >= 0 else 0.0
+
+    ordered = sorted(symbols, key=lambda symbol: (-quote_volume(symbol), symbol))
+    return ordered, {symbol: rank for rank, symbol in enumerate(ordered, start=1)}
+
+
 def tradingview_url(symbol: str) -> str:
     """Link directly to the BingX USDT-M perpetual chart, not the spot pair."""
     if not symbol.endswith('/USDT:USDT'):
@@ -103,15 +129,21 @@ def tradingview_url(symbol: str) -> str:
     return 'https://www.tradingview.com/chart/?symbol=' + quote('BINGX:' + ticker, safe='') + '&interval=60'
 
 
-def signal_caption(symbol: str, close: float, arsi: float, close_time: str) -> str:
-    ticker = symbol.split('/', 1)[0] + 'USDT.P'
+def signal_caption(symbol: str, close: float, arsi: float, close_time: str,
+                   volume_rank: int) -> str:
+    pair = symbol.split('/', 1)[0] + '/USDT'
     url = tradingview_url(symbol)
-    return (f'OVERSOLD | BingX USDT-M Perpetual · 1 jam\n'
-            f'Koin: <code>{escape(ticker)}</code>\n'
-            f'Close: {close:.10g} USDT\n'
-            f'Ultimate RSI: {arsi:.4f} (&lt;20)\n'
-            f'Candle tutup: {escape(close_time)}\n'
-            f'<a href="{url}">Buka chart BingX di TradingView</a>')
+    return (f'<b>▣ 📊 MARKET INFO</b>\n'
+            f'│ 🪙 <b>Pair:</b> {escape(pair)}\n'
+            f'│ 🌐 <b>Market:</b> BingX USDT-M Perpetual\n'
+            f'│ 📊 <b>Peringkat volume 24j:</b> #{volume_rank}\n'
+            f'│ ⏱ <b>TF:</b> 1h\n'
+            f'│ 🕒 <b>Candle:</b> {escape(close_time)}\n\n'
+            f'<b>▣ 🎯 TECHNICAL TRIGGER</b>\n'
+            f'│ ⚠️ <b>Status:</b> <b>OVERSOLD</b>\n'
+            f'│ 💵 <b>Price:</b> <b>{close:.10g} USDT</b>\n'
+            f'│ 📉 <b>RSI:</b> <b>{arsi:.4f}</b> (&lt;20)\n'
+            f'└ 🔗 <a href="{url}">Buka chart BingX di TradingView</a>')
 
 
 def catchup_open_times(last_open_ms: int | None, latest_open_ms: int) -> list[int]:
@@ -125,15 +157,9 @@ def catchup_open_times(last_open_ms: int | None, latest_open_ms: int) -> list[in
 
 
 def render_chart(frame: pd.DataFrame, symbol: str, path: Path) -> None:
-    visible = frame.tail(50).copy()
+    visible = frame.tail(100).copy()
     # Local naive dates avoid mplfinance converting the axis back to UTC.
     visible.index = visible.index.tz_localize(None)
-    overlays = [
-        mpf.make_addplot(visible.ARSI, panel=1, color='#4b4b4b', width=1.2, ylim=(0, 100)),
-        mpf.make_addplot(visible.Signal, panel=1, color='#ff952f', width=1.1, secondary_y=False),
-        mpf.make_addplot(pd.Series(20, index=visible.index), panel=1, color='#ff6577', width=0.9, linestyle='--', secondary_y=False),
-        mpf.make_addplot(pd.Series(80, index=visible.index), panel=1, color='#39ceab', width=0.9, linestyle='--', secondary_y=False),
-    ]
     market_colors = mpf.make_marketcolors(up='#b8b8b8', down='#626262',
                                          edge='#4b4b4b', wick='#4b4b4b')
     style = mpf.make_mpf_style(base_mpf_style='classic', marketcolors=market_colors,
@@ -141,20 +167,14 @@ def render_chart(frame: pd.DataFrame, symbol: str, path: Path) -> None:
                               rc={'axes.grid': False, 'font.size': 9, 'axes.labelcolor': '#555555',
                                   'xtick.color': '#555555', 'ytick.color': '#555555'})
     close_time = datetime.fromtimestamp((int(frame.Timestamp.iloc[-1]) + HOUR) / 1000, TOKYO).strftime('%Y-%m-%d %H:%M JST')
-    title = f'{symbol} | BingX USDT-M | 1h\nClosed: {close_time} | Ultimate RSI: {frame.ARSI.iloc[-1]:.2f}'
-    fig, axes = mpf.plot(visible, type='candle', style=style, addplot=overlays,
-                         panel_ratios=(3.5, 1), volume=False, figsize=(14, 6.5),
-                         update_width_config={'candle_width': 0.48, 'candle_linewidth': 0.8},
+    title = f'{symbol} | BingX USDT-M | 1h\nClosed: {close_time}'
+    fig, axes = mpf.plot(visible, type='candle', style=style,
+                         volume=False, figsize=(16, 7),
+                         update_width_config={'candle_width': 0.52, 'candle_linewidth': 0.8},
                          ylabel='', datetime_format='%m-%d %H:%M',
                          xrotation=0, returnfig=True, tight_layout=False)
     fig.suptitle(title, y=0.97, color='#333333', fontsize=11)
-    # Use most of the canvas, reserving only space for header, ticks and credit.
-    bottom, total_height = 0.10, 0.78
-    rsi_height = total_height / 4.5
-    for axis in axes[:2]:
-        axis.set_position([0.025, bottom + rsi_height, 0.91, total_height - rsi_height])
-    for axis in axes[2:]:
-        axis.set_position([0.025, bottom, 0.91, rsi_height])
+    # Use the full plotting area for price candles; RSI stays in the alert only.
     for axis in axes:
         axis.set_ylabel('')
         axis.set_xlabel('')
@@ -162,13 +182,10 @@ def render_chart(frame: pd.DataFrame, symbol: str, path: Path) -> None:
         axis.tick_params(labelsize=8)
         for spine in axis.spines.values():
             spine.set_visible(False)
-    # Outline primary panels only; keep internal chart grid disabled.
-    for axis in (axes[0], axes[2]):
-        for spine in axis.spines.values():
-            spine.set_visible(True)
-            spine.set_color('#333333')
-            spine.set_linewidth(0.65)
-    axes[2].axhspan(0, 20, color='#ff6577', alpha=0.05)
+    for spine in axes[0].spines.values():
+        spine.set_visible(True)
+        spine.set_color('#333333')
+        spine.set_linewidth(0.65)
     fig.text(0.5, 0.012, 'Asia/Tokyo | © LuxAlgo · CC BY-NC-SA 4.0 | Python adaptation',
              ha='center', color='#777777', fontsize=7)
     try:
@@ -293,20 +310,12 @@ def main():
     # Only load the USDT-M swap catalog, avoiding unnecessary spot endpoints.
     markets = retry_read(exchange.fetch_swap_markets, {})
     exchange.set_markets(markets)
-    symbols = sorted(m['symbol'] for m in markets if m.get('active') is True
-                     and m.get('swap') and m.get('linear')
-                     and m.get('quote') == 'USDT' and m.get('settle') == 'USDT')
+    symbols = sorted(m['symbol'] for m in markets if is_active_usdt_perpetual(m))
     if not symbols:
         raise RuntimeError('Tidak ada pasar BingX USDT-M aktif yang ditemukan')
-    if args.limit and len(symbols) > args.limit:
-        tickers = retry_read(exchange.fetch_tickers, symbols, {'type': 'swap'})
-        def volume(symbol):
-            ticker = tickers.get(symbol, {})
-            value = ticker.get('quoteVolume')
-            if value is None:
-                value = (ticker.get('baseVolume') or 0) * (ticker.get('last') or 0)
-            return float(value) if math.isfinite(float(value)) else 0
-        symbols = sorted(symbols, key=lambda s: (-volume(s), s))[:args.limit]
+    tickers = retry_read(exchange.fetch_tickers, symbols, {'type': 'swap'})
+    ranked_symbols, volume_rank = volume_ranks(symbols, tickers)
+    symbols = ranked_symbols[:args.limit] if args.limit else ranked_symbols
     now_ms = retry_read(exchange.fetch_time)
     if not isinstance(now_ms, int):
         raise RuntimeError('Waktu server BingX tidak valid')
@@ -350,7 +359,8 @@ def main():
                     continue
                 matches += 1
                 close_time = datetime.fromtimestamp((candle_open_ms + HOUR) / 1000, TOKYO).strftime('%Y-%m-%d %H:%M JST')
-                caption = signal_caption(symbol, float(candle_frame.Close.iloc[-1]), arsi, close_time)
+                caption = signal_caption(symbol, float(candle_frame.Close.iloc[-1]),
+                                         arsi, close_time, volume_rank[symbol])
                 if dry:
                     if args.preview_dir and matches == 1:
                         render_chart(candle_frame, symbol, args.preview_dir / 'signal-preview.png')

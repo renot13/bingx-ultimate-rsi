@@ -1,7 +1,7 @@
 # BingX Ultimate RSI → Telegram
 
 Screener **1 jam**, menggunakan candle **BingX USDT-M Perpetual**, bukan RSI
-standar. Mengirim gambar candlestick + panel Ultimate RSI LuxAlgo ketika
+standar. Mengirim gambar candlestick tanpa panel RSI ketika
 **nilai Ultimate RSI yang belum dibulatkan < 20** pada candle tertutup yang
 belum dipindai.
 Tidak menggunakan SMA20 atau syarat crossing. Tidak memasang order.
@@ -15,22 +15,22 @@ Tidak menggunakan SMA20 atau syarat crossing. Tidak memasang order.
   per hari pengiriman Tokyo. Run live pertama hanya memeriksa candle terbaru.
 - Waktu gambar dan pergantian hari: **Asia/Tokyo (JST / UTC+9)**.
 - **200 pasangan aktif dengan volume transaksi 24 jam terbesar**, dipilih ulang
-  saat scan. Jika kurang dari 200, semua pasangan aktif diperiksa. Pemilihan
-  berdasarkan quoteVolume, dengan baseVolume × last sebagai fallback.
+  saat scan. Jika kurang dari 200, semua pasar aktif diperiksa. Pemilihan
+  berdasarkan quoteVolume, dengan baseVolume × last sebagai fallback. Caption
+  mencantumkan nomor peringkat volume 24 jam di antara seluruh pasar BingX USDT-M
+  aktif, termasuk kontrak komoditas dan indeks bila tersedia.
 - Maksimal satu pengiriman per pasangan per tanggal pengiriman Tokyo.
 - Hari baru boleh mengirim kembali meskipun RSI masih <20.
 - 1.000 candle diambil untuk warm-up; minimal 200 candle tertutup diperlukan.
   Koin baru dengan riwayat lebih pendek dilewati dan dilaporkan sebagai error.
-- 50 candle terakhir pada gambar; sumbu waktu menunjukkan waktu BUKA candle,
+- 100 candle terakhir pada gambar; sumbu waktu menunjukkan waktu BUKA candle,
   judul dan caption menunjukkan waktu TUTUP candle.
 - Tampilan putih tanpa grid, candle naik abu-abu muda dan turun abu-abu tua,
-  dengan sumbu/wick abu-abu gelap. Format melebar 14 × 6,5 inci, candle ramping.
-  Area plot diperbesar dengan margin rapat; label samping Price/Ultimate RSI
-  dihapus, angka harga dan indikator tetap terlihat.
-  Garis level indikator 20/80 tetap ditampilkan sebagai acuan sinyal.
-  Bingkai tipis gelap tetap terlihat di tepi chart dan pemisah panel RSI,
-  termasuk batas atas serta sisi kanan dekat angka harga; grid interior mati.
+  dengan sumbu/wick abu-abu gelap. Format melebar 16 × 7 inci.
+  Chart diperlebar agar lebih banyak riwayat harga tampak sekaligus. RSI hanya
+  ditampilkan dalam caption pesan dan tetap digunakan untuk memicu sinyal.
 - Ultimate RSI: length 14, source close, RMA; signal line EMA14; level 20/80.
+  Indikator tetap dihitung sebagai pemicu; panelnya tidak dirender di gambar.
 - Gambar dibuat dari OHLCV perdagangan BingX, bukan screenshot aplikasi, dan
   bukan candle mark price. File sementara dibersihkan setelah percobaan kirim.
 - Caption Telegram menampilkan ticker perpetual `BINGX:...USDT.P` sebagai teks
@@ -113,9 +113,11 @@ malam. Candle 23:00–00:00 dievaluasi sekitar 00:01 dan termasuk hari baru.
 
 ## Mengubah jumlah koin
 
-Edit `MAX_COINS` dalam workflow: `'200'` untuk 200 pasangan teratas berdasarkan
-volume, atau `'0'` untuk SEMUA pasar aktif. Daftar bukan hardcoded. Pasangan yang
-keluar dari 200 besar tidak dipantau sampai masuk kembali.
+Edit `MAX_COINS` dalam workflow: `'200'` untuk 200 pasar teratas
+berdasarkan volume, atau `'0'` untuk SEMUA pasar BingX USDT-M aktif. Pasar yang
+memenuhi tipe kontrak linear USDT, termasuk komoditas dan indeks, ikut dipindai.
+Peringkat dalam caption dihitung di antara seluruh kandidat sebelum batas
+`MAX_COINS`. Pasar yang keluar dari 200 besar tidak dipantau sampai masuk kembali.
 
 ## Tes lokal tanpa mengirim pesan
 

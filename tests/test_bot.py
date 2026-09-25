@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 import pandas as pd
 
-from bot import HOUR, catchup_open_times, closed_frame, eligible, rma, ultimate_rsi, tokyo_day, send_photo, signal_caption, tradingview_url, DeliveryUnknown, GitHubState, StateError
+from bot import HOUR, catchup_open_times, closed_frame, eligible, rma, ultimate_rsi, tokyo_day, send_photo, signal_caption, tradingview_url, DeliveryUnknown, GitHubState, StateError, is_active_usdt_perpetual, volume_ranks
 import requests
 
 
@@ -92,14 +92,37 @@ class CandleTests(unittest.TestCase):
                 self.assertEqual(post.call_count, 1)
 
     def test_caption_has_copyable_ticker_and_bingx_chart(self):
-        caption = signal_caption('ON/USDT:USDT', 0.1456, 18.6659, '2026-09-21 20:00 JST')
-        self.assertIn('Koin: <code>ONUSDT.P</code>', caption)
+        caption = signal_caption('ON/USDT:USDT', 0.1456, 18.6659, '2026-09-21 20:00 JST', 2)
+        self.assertIn('│ 🪙 <b>Pair:</b> ON/USDT', caption)
+        self.assertIn('│ 🌐 <b>Market:</b> BingX USDT-M Perpetual', caption)
+        self.assertIn('│ 📊 <b>Peringkat volume 24j:</b> #2', caption)
+        self.assertIn('│ ⏱ <b>TF:</b> 1h', caption)
+        self.assertIn('│ 🕒 <b>Candle:</b> 2026-09-21 20:00 JST', caption)
+        self.assertIn('│ 💵 <b>Price:</b> <b>0.1456 USDT</b>', caption)
         self.assertIn('symbol=BINGX%3AONUSDT.P&interval=60', caption)
-        self.assertIn('18.6659 (&lt;20)', caption)
-        self.assertNotIn('Maksimal 1 sinyal', caption)
-        self.assertNotIn('© LuxAlgo', caption)
+        self.assertIn('│ 📉 <b>RSI:</b> <b>18.6659</b> (&lt;20)', caption)
         with self.assertRaises(ValueError):
             tradingview_url('ON/USDT')
+
+    def test_all_active_usdt_perpetuals_including_commodities_are_kept(self):
+        def market(base, **extra):
+            return {'active': True, 'swap': True, 'linear': True, 'quote': 'USDT',
+                    'settle': 'USDT', 'base': base, 'type': 'swap', 'spot': False,
+                    'contract': True, 'symbol': f'{base}/USDT:USDT', **extra}
+
+        self.assertTrue(is_active_usdt_perpetual(market('BTC')))
+        self.assertTrue(is_active_usdt_perpetual(market('XAU', baseName='Gold')))
+        self.assertTrue(is_active_usdt_perpetual(market('XAUUSD', name='Gold perpetual')))
+        self.assertFalse(is_active_usdt_perpetual(market('BTC', active=False)))
+
+    def test_volume_rank_is_global_and_stable(self):
+        ordered, ranks = volume_ranks(['AAA/USDT:USDT', 'BTC/USDT:USDT', 'CCC/USDT:USDT'], {
+            'AAA/USDT:USDT': {'quoteVolume': 100},
+            'BTC/USDT:USDT': {'quoteVolume': 300},
+            'CCC/USDT:USDT': {'quoteVolume': 200},
+        })
+        self.assertEqual(ordered, ['BTC/USDT:USDT', 'CCC/USDT:USDT', 'AAA/USDT:USDT'])
+        self.assertEqual(ranks['CCC/USDT:USDT'], 2)
 
     def test_catchup_candles_are_ordered_and_bounded(self):
         self.assertEqual(catchup_open_times(None, 10 * HOUR), [10 * HOUR])

@@ -267,10 +267,9 @@
     "message_id": 75
   },
   "CATI/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 01:00 JST",
-    "message_id": 76
+    "day": "2026-09-25",
+    "status": "pending",
+    "candle_close": "2026-09-25 12:00 JST"
   },
   "DEEP/USDT:USDT": {
     "day": "2026-09-24",

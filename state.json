@@ -591,10 +591,9 @@
     "message_id": 132
   },
   "NCSKAAPL2USD/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 10:00 JST",
-    "message_id": 133
+    "day": "2026-09-25",
+    "status": "pending",
+    "candle_close": "2026-09-25 14:00 JST"
   },
   "JASMY/USDT:USDT": {
     "day": "2026-09-24",

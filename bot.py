@@ -168,13 +168,15 @@ def render_chart(frame: pd.DataFrame, symbol: str, path: Path) -> None:
                               rc={'axes.grid': False, 'font.size': 9, 'axes.labelcolor': '#555555',
                                   'xtick.color': '#555555', 'ytick.color': '#555555'})
     close_time = datetime.fromtimestamp((int(frame.Timestamp.iloc[-1]) + HOUR) / 1000, TOKYO).strftime('%Y-%m-%d %H:%M JST')
-    title = f'{symbol} | BingX USDT-M | 1h\nClosed: {close_time}'
+    title = f'{symbol}  |  BingX USDT-M  |  1h  |  Tutup {close_time}'
     fig, axes = mpf.plot(visible, type='candle', style=style,
                          volume=False, figsize=(16, 7),
                          update_width_config={'candle_width': 0.52, 'candle_linewidth': 0.8},
                          ylabel='', datetime_format='%m-%d %H:%M',
                          xrotation=0, returnfig=True, tight_layout=False)
-    fig.suptitle(title, y=0.97, color='#333333', fontsize=11)
+    fig.subplots_adjust(left=0.04, right=0.94, bottom=0.13, top=0.86)
+    fig.suptitle(title, x=0.5, y=0.96, ha='center', multialignment='center',
+                 color='#333333', fontsize=11)
     # Use the full plotting area for price candles; RSI stays in the alert only.
     for axis in axes:
         axis.set_ylabel('')
@@ -188,7 +190,7 @@ def render_chart(frame: pd.DataFrame, symbol: str, path: Path) -> None:
         spine.set_color('#333333')
         spine.set_linewidth(0.65)
     try:
-        fig.savefig(path, dpi=130, bbox_inches='tight', facecolor=fig.get_facecolor())
+        fig.savefig(path, dpi=130, facecolor=fig.get_facecolor())
     finally:
         plt.close(fig)
 

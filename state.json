@@ -709,5 +709,10 @@
     "status": "sent",
     "candle_close": "2026-09-26 01:00 JST",
     "message_id": 173
+  },
+  "HANA/USDT:USDT": {
+    "day": "2026-09-26",
+    "status": "pending",
+    "candle_close": "2026-09-26 06:00 JST"
   }
 }

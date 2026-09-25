@@ -489,10 +489,9 @@
     "message_id": 114
   },
   "TRX/USDT:USDT": {
-    "day": "2026-09-25",
-    "status": "sent",
-    "candle_close": "2026-09-25 20:00 JST",
-    "message_id": 166
+    "day": "2026-09-26",
+    "status": "pending",
+    "candle_close": "2026-09-26 00:00 JST"
   },
   "COMP/USDT:USDT": {
     "day": "2026-09-24",

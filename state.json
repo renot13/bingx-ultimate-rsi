@@ -697,5 +697,10 @@
     "status": "sent",
     "candle_close": "2026-09-26 00:00 JST",
     "message_id": 171
+  },
+  "NCSKCRCL2USD/USDT:USDT": {
+    "day": "2026-09-26",
+    "status": "pending",
+    "candle_close": "2026-09-26 01:00 JST"
   }
 }

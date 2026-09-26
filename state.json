@@ -721,5 +721,10 @@
     "status": "sent",
     "candle_close": "2026-09-26 07:00 JST",
     "message_id": 176
+  },
+  "NCSKMETA2USD/USDT:USDT": {
+    "day": "2026-09-26",
+    "status": "pending",
+    "candle_close": "2026-09-26 13:00 JST"
   }
 }

@@ -745,5 +745,10 @@
     "status": "sent",
     "candle_close": "2026-09-27 02:00 JST",
     "message_id": 191
+  },
+  "BITLIGHT/USDT:USDT": {
+    "day": "2026-09-27",
+    "status": "pending",
+    "candle_close": "2026-09-27 03:00 JST"
   }
 }

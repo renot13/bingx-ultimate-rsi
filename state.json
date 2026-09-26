@@ -633,10 +633,9 @@
     "message_id": 159
   },
   "UAI/USDT:USDT": {
-    "day": "2026-09-25",
-    "status": "sent",
-    "candle_close": "2026-09-25 00:00 JST",
-    "message_id": 152
+    "day": "2026-09-27",
+    "status": "pending",
+    "candle_close": "2026-09-27 02:00 JST"
   },
   "NCSINASDAQ1002USD/USDT:USDT": {
     "day": "2026-09-24",

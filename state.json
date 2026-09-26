@@ -561,10 +561,9 @@
     "message_id": 188
   },
   "BAS/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 07:00 JST",
-    "message_id": 127
+    "day": "2026-09-27",
+    "status": "pending",
+    "candle_close": "2026-09-27 06:00 JST"
   },
   "ENSO/USDT:USDT": {
     "day": "2026-09-24",

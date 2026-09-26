@@ -727,5 +727,10 @@
     "status": "sent",
     "candle_close": "2026-09-26 13:00 JST",
     "message_id": 178
+  },
+  "BLESS/USDT:USDT": {
+    "day": "2026-09-26",
+    "status": "pending",
+    "candle_close": "2026-09-26 19:00 JST"
   }
 }

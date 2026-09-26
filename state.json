@@ -730,8 +730,9 @@
   },
   "BLESS/USDT:USDT": {
     "day": "2026-09-27",
-    "status": "pending",
-    "candle_close": "2026-09-27 04:00 JST"
+    "status": "sent",
+    "candle_close": "2026-09-27 04:00 JST",
+    "message_id": 193
   },
   "NIL/USDT:USDT": {
     "day": "2026-09-27",

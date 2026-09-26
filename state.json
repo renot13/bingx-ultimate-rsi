@@ -483,10 +483,9 @@
     "message_id": 113
   },
   "EVAA/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 06:00 JST",
-    "message_id": 114
+    "day": "2026-09-26",
+    "status": "pending",
+    "candle_close": "2026-09-26 22:00 JST"
   },
   "TRX/USDT:USDT": {
     "day": "2026-09-26",

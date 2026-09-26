@@ -735,10 +735,9 @@
     "message_id": 179
   },
   "NIL/USDT:USDT": {
-    "day": "2026-09-26",
-    "status": "sent",
-    "candle_close": "2026-09-26 22:00 JST",
-    "message_id": 181
+    "day": "2026-09-27",
+    "status": "pending",
+    "candle_close": "2026-09-27 01:00 JST"
   },
   "TRADOOR/USDT:USDT": {
     "day": "2026-09-26",

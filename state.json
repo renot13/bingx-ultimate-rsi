@@ -769,5 +769,10 @@
     "status": "sent",
     "candle_close": "2026-09-27 06:00 JST",
     "message_id": 196
+  },
+  "BNLIFE/USDT:USDT": {
+    "day": "2026-09-27",
+    "status": "pending",
+    "candle_close": "2026-09-27 06:00 JST"
   }
 }

@@ -177,10 +177,9 @@
     "message_id": 51
   },
   "THE/USDT:USDT": {
-    "day": "2026-09-24",
-    "status": "sent",
-    "candle_close": "2026-09-24 00:00 JST",
-    "message_id": 57
+    "day": "2026-09-27",
+    "status": "pending",
+    "candle_close": "2026-09-27 00:00 JST"
   },
   "1000PEPE/USDT:USDT": {
     "day": "2026-09-25",
